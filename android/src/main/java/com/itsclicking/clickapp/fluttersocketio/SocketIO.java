@@ -105,11 +105,7 @@ public class SocketIO {
             URI uri = new URI(getSocketUrl());
             parsed = Url.parse(uri);
             source = parsed.toURI();
-        } catch (URISyntaxException e) {
-            throw new RuntimeException(e);
-        }
-
-        mOptions = new IO.Options();
+            mOptions = new IO.Options();
         mOptions.transports = new String[]{WebSocket.NAME};
         mOptions.forceNew = true;
         mOptions.reconnection = true;
@@ -175,6 +171,12 @@ public class SocketIO {
         }
 
         return io.socket(_namespace, mOptions);
+        } catch (Exception e) {
+            System.out.println("Cannot create socket client");
+            e.printStackTrace();
+        }
+
+        return null;
     }
 
     public String getId() {
