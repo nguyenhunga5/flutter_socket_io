@@ -107,7 +107,7 @@ public class SocketIO {
             source = parsed.toURI();
             mOptions = new IO.Options();
         mOptions.transports = new String[]{WebSocket.NAME};
-        mOptions.forceNew = true;
+        mOptions.forceNew = false;
         mOptions.reconnection = true;
 
         if (getSocketUrl().startsWith("https")) {
