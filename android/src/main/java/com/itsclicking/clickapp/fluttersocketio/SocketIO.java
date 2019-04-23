@@ -15,6 +15,27 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
 import java.util.logging.Level;
+import java.net.URISyntaxException;
+
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSession;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.TrustManagerFactory;
+import javax.net.ssl.X509TrustManager;
+import javax.security.cert.X509Certificate;
+
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
+
+import java.io.IOException;
+import java.io.InputStream;
+
+import okhttp3.OkHttpClient;
 
 import io.flutter.plugin.common.MethodChannel;
 import io.socket.client.Ack;
@@ -23,6 +44,7 @@ import io.socket.client.Manager;
 import io.socket.client.Socket;
 import io.socket.client.Url;
 import io.socket.emitter.Emitter;
+
 import io.socket.engineio.client.transports.WebSocket;
 
 public class SocketIO {
@@ -89,6 +111,49 @@ public class SocketIO {
 
         mOptions = new IO.Options();
         mOptions.transports = new String[]{WebSocket.NAME};
+        mOptions.forceNew = true;
+        mOptions.reconnection = true;
+
+        if (getSocketUrl().startsWith("https")) {
+            SSLContext sslContext = SSLContext.getInstance("TLS");
+            TrustManager[] trustAllCerts= new TrustManager[] { new X509TrustManager() {
+                @Override
+                public void checkClientTrusted(java.security.cert.X509Certificate[] x509Certificates, String s) throws CertificateException {
+
+                }
+
+                @Override
+                public void checkServerTrusted(java.security.cert.X509Certificate[] x509Certificates, String s) throws CertificateException {
+
+                }
+
+                public java.security.cert.X509Certificate[] getAcceptedIssuers() {
+                    return new java.security.cert.X509Certificate[] {};
+                }
+
+            } };
+
+            HostnameVerifier hostnameVerifier = new HostnameVerifier() {
+                @Override
+                public boolean verify(String hostname, SSLSession session) {
+                    return HCNetworkUtils.host.equals(hostname);
+                }
+            };
+
+            sslContext.init(null, trustAllCerts, null);
+
+            OkHttpClient okHttpClient = new OkHttpClient.Builder()
+                    .hostnameVerifier(hostnameVerifier)
+                    .sslSocketFactory(sslContext.getSocketFactory(), (X509TrustManager)trustAllCerts[0])
+                    .build();
+
+            // default settings for all sockets
+            IO.setDefaultOkHttpWebSocketFactory(okHttpClient);
+            IO.setDefaultOkHttpCallFactory(okHttpClient);
+
+            mOptions.callFactory = okHttpClient;
+            mOptions.webSocketFactory = okHttpClient;
+        }
 
         if(!Utils.isNullOrEmpty(_query)) {
             Utils.log(TAG, "query: " + _query);
