@@ -136,7 +136,7 @@ public class SocketIO {
             HostnameVerifier hostnameVerifier = new HostnameVerifier() {
                 @Override
                 public boolean verify(String hostname, SSLSession session) {
-                    return HCNetworkUtils.host.equals(hostname);
+                    return true;
                 }
             };
 
